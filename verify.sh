@@ -12,84 +12,89 @@ echo ""
 PASS=0
 FAIL=0
 
-check() {
-  if command -v "$2" &>/dev/null || flatpak list 2>/dev/null | grep -qi "$2" || [ -d "$2" ]; then
-    echo -e "  ✅ $1"
+check_cmd() {
+  if command -v "$2" &>/dev/null; then
+    echo "  ✅ $1"
     ((PASS++))
   else
-    echo -e "  ❌ $1 — NOT FOUND"
+    echo "  ❌ $1 — NOT FOUND"
     ((FAIL++))
   fi
 }
 
 check_flatpak() {
   if flatpak list 2>/dev/null | grep -qi "$2"; then
-    echo -e "  ✅ $1"
+    echo "  ✅ $1"
     ((PASS++))
   else
-    echo -e "  ❌ $1 — NOT FOUND"
+    echo "  ❌ $1 — NOT FOUND"
     ((FAIL++))
   fi
 }
 
 check_dir() {
   if [ -d "$2" ]; then
-    echo -e "  ✅ $1"
+    echo "  ✅ $1"
     ((PASS++))
   else
-    echo -e "  ❌ $1 — NOT FOUND"
+    echo "  ❌ $1 — NOT FOUND"
     ((FAIL++))
   fi
 }
 
 echo "--- System Tools ---"
-check "Git" "git"
-check "Make" "make"
-check "GCC" "gcc"
-check "curl" "curl"
-check "wget" "wget"
-check "htop" "htop"
-check "neofetch" "neofetch"
-check "Flameshot" "flameshot"
+check_cmd "Git" "git"
+check_cmd "Make" "make"
+check_cmd "GCC" "gcc"
+check_cmd "curl" "curl"
+check_cmd "wget" "wget"
+check_cmd "htop" "htop"
+check_cmd "neofetch" "neofetch"
+check_cmd "Flameshot" "flameshot"
 
 echo ""
 echo "--- Shell ---"
-check "Zsh" "zsh"
+check_cmd "Zsh" "zsh"
 check_dir "Oh My Zsh" "$HOME/.oh-my-zsh"
 check_dir "Powerlevel10k" "${ZSH_CUSTOM:-$HOME/.oh-my-zsh/custom}/themes/powerlevel10k"
 
 echo ""
 echo "--- Development ---"
-check "Node.js" "node"
-check "npm" "npm"
-check "Python3" "python3"
-check "pip" "pip3"
-check "Docker" "docker"
-check "Docker Compose" "docker"
-check "Rust (cargo)" "cargo"
-check "Ghostty" "ghostty"
 
-# Check uv
-if [ -f "$HOME/.cargo/bin/uv" ] || command -v uv &>/dev/null; then
-  echo -e "  ✅ uv (Python package manager)"
+# Node.js (needs nvm loaded)
+export NVM_DIR="$HOME/.nvm"
+[ -s "$NVM_DIR/nvm.sh" ] && \. "$NVM_DIR/nvm.sh"
+check_cmd "Node.js" "node"
+check_cmd "npm" "npm"
+check_dir "nvm" "$HOME/.nvm"
+
+check_cmd "Python3" "python3"
+check_cmd "pip" "pip3"
+check_cmd "Docker" "docker"
+check_cmd "Rust (cargo)" "cargo"
+check_cmd "Ghostty" "ghostty"
+
+# uv
+if [ -f "$HOME/.local/bin/uv" ] || command -v uv &>/dev/null; then
+  echo "  ✅ uv (Python package manager)"
   ((PASS++))
 else
-  echo -e "  ❌ uv — NOT FOUND"
+  echo "  ❌ uv — NOT FOUND"
   ((FAIL++))
 fi
 
-# Check nvm
-if [ -d "$HOME/.nvm" ]; then
-  echo -e "  ✅ nvm"
+# Kiro
+if command -v kiro &>/dev/null || [ -d "/opt/kiro" ] || [ -d "$HOME/.local/share/kiro" ]; then
+  echo "  ✅ Kiro IDE"
   ((PASS++))
 else
-  echo -e "  ❌ nvm — NOT FOUND"
+  echo "  ❌ Kiro IDE — NOT FOUND"
   ((FAIL++))
 fi
 
 echo ""
 echo "--- Browsers ---"
-check "Brave Browser" "brave-browser"
+check_cmd "Brave Browser" "brave-browser"
 
 echo ""
 echo "--- Apps (Flatpak) ---"
@@ -102,36 +107,36 @@ check_flatpak "Spotify" "spotify"
 echo ""
 echo "--- Fonts ---"
 if fc-list | grep -qi "MesloLGS"; then
-  echo -e "  ✅ MesloLGS Nerd Font"
+  echo "  ✅ MesloLGS Nerd Font"
   ((PASS++))
 else
-  echo -e "  ❌ MesloLGS Nerd Font — NOT FOUND"
+  echo "  ❌ MesloLGS Nerd Font — NOT FOUND"
   ((FAIL++))
 fi
 
 if fc-list | grep -qi "JetBrains Mono"; then
-  echo -e "  ✅ JetBrains Mono"
+  echo "  ✅ JetBrains Mono"
   ((PASS++))
 else
-  echo -e "  ❌ JetBrains Mono — NOT FOUND"
+  echo "  ❌ JetBrains Mono — NOT FOUND"
   ((FAIL++))
 fi
 
 echo ""
 echo "--- Repos ---"
 if dnf repolist 2>/dev/null | grep -qi "rpmfusion"; then
-  echo -e "  ✅ RPM Fusion"
+  echo "  ✅ RPM Fusion"
   ((PASS++))
 else
-  echo -e "  ❌ RPM Fusion — NOT FOUND"
+  echo "  ❌ RPM Fusion — NOT FOUND"
   ((FAIL++))
 fi
 
 if flatpak remotes 2>/dev/null | grep -qi "flathub"; then
-  echo -e "  ✅ Flathub"
+  echo "  ✅ Flathub"
   ((PASS++))
 else
-  echo -e "  ❌ Flathub — NOT FOUND"
+  echo "  ❌ Flathub — NOT FOUND"
   ((FAIL++))
 fi
 
