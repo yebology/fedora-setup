@@ -1,19 +1,33 @@
 #!/bin/bash
 # =============================================================================
-# Fix Conky autostart on login
+# Fix Conky autostart using systemd (works on Wayland)
 # Usage: bash <(curl -fsSL https://raw.githubusercontent.com/yebology/fedora-setup/main/fix-conky-autostart.sh)
 # =============================================================================
 
-mkdir -p ~/.config/autostart
+# Remove old .desktop autostart if exists
+rm -f ~/.config/autostart/conky.desktop
 
-cat > ~/.config/autostart/conky.desktop << 'EOF'
-[Desktop Entry]
-Type=Application
-Name=Conky
-Exec=bash -c "sleep 2 && conky"
-StartupNotify=false
-Terminal=false
-X-GNOME-Autostart-enabled=true
+# Create systemd user service
+mkdir -p ~/.config/systemd/user
+cat > ~/.config/systemd/user/conky.service << 'EOF'
+[Unit]
+Description=Conky Desktop Clock
+After=graphical-session.target
+
+[Service]
+ExecStartPre=/bin/sleep 3
+ExecStart=/usr/bin/conky
+Restart=on-failure
+RestartSec=3
+
+[Install]
+WantedBy=graphical-session.target
 EOF
 
-echo "✅ Done! Conky will auto-start 2 seconds after login."
+# Enable and start
+systemctl --user daemon-reload
+systemctl --user enable conky.service
+systemctl --user start conky.service
+
+echo "✅ Done! Conky will auto-start on every login."
+echo "   Logout and login to verify."
