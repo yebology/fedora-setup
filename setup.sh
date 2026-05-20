@@ -6,64 +6,82 @@
 
 # Don't use set -e — we want the script to continue even if one step fails
 ERRORS=()
+LOGFILE="$HOME/fedora-setup.log"
+
+# Log all output to file for debugging
+exec > >(tee -a "$LOGFILE") 2>&1
 
 echo "=========================================="
 echo "  Fedora Dev Setup - Starting..."
+echo "  Log file: $LOGFILE"
 echo "=========================================="
+
+# Helper: run a step and capture error with reason
+run_step() {
+  local step_name="$1"
+  shift
+  echo ""
+  echo "--- Running: $step_name ---"
+  if "$@"; then
+    echo "--- ✅ $step_name succeeded ---"
+  else
+    local exit_code=$?
+    echo "--- ❌ $step_name FAILED (exit code: $exit_code) ---"
+    ERRORS+=("$step_name (exit code: $exit_code)")
+  fi
+}
 
 # ---------------------------------------------------------------------------
 # 1. System Update
 # ---------------------------------------------------------------------------
 echo "[1/18] Updating system..."
-sudo dnf update -y || ERRORS+=("System Update")
+run_step "System Update" sudo dnf update -y
 
 # ---------------------------------------------------------------------------
 # 2. RPM Fusion + Multimedia Codecs
 # ---------------------------------------------------------------------------
 echo "[2/18] Adding RPM Fusion repos + codecs..."
-sudo dnf install -y \
-  https://mirrors.rpmfusion.org/free/fedora/rpmfusion-free-release-$(rpm -E %fedora).noarch.rpm \
-  https://mirrors.rpmfusion.org/nonfree/fedora/rpmfusion-nonfree-release-$(rpm -E %fedora).noarch.rpm || ERRORS+=("RPM Fusion")
-
-sudo dnf group install -y multimedia || ERRORS+=("Multimedia codecs")
-sudo dnf install -y ffmpeg ffmpeg-libs || ERRORS+=("FFmpeg")
+run_step "RPM Fusion Free" sudo dnf install -y https://mirrors.rpmfusion.org/free/fedora/rpmfusion-free-release-$(rpm -E %fedora).noarch.rpm
+run_step "RPM Fusion Nonfree" sudo dnf install -y https://mirrors.rpmfusion.org/nonfree/fedora/rpmfusion-nonfree-release-$(rpm -E %fedora).noarch.rpm
+run_step "Multimedia codecs" sudo dnf group install -y multimedia
+run_step "FFmpeg" sudo dnf install -y ffmpeg ffmpeg-libs
 
 # ---------------------------------------------------------------------------
 # 3. Flathub
 # ---------------------------------------------------------------------------
 echo "[3/18] Enabling Flathub..."
-flatpak remote-add --if-not-exists flathub https://dl.flathub.org/repo/flathub.flatpakrepo || ERRORS+=("Flathub")
+run_step "Flathub" flatpak remote-add --if-not-exists flathub https://dl.flathub.org/repo/flathub.flatpakrepo
 
 # ---------------------------------------------------------------------------
 # 4. Brave Browser
 # ---------------------------------------------------------------------------
 echo "[4/18] Installing Brave Browser..."
-sudo dnf install -y dnf-plugins-core || true
-sudo dnf config-manager --add-repo https://brave-browser-rpm-release.s3.brave.com/brave-browser.repo || true
-sudo rpm --import https://brave-browser-rpm-release.s3.brave.com/brave-core.asc || true
-sudo dnf install -y brave-browser || ERRORS+=("Brave Browser")
+sudo dnf install -y dnf-plugins-core 2>/dev/null || true
+sudo dnf config-manager --add-repo https://brave-browser-rpm-release.s3.brave.com/brave-browser.repo 2>/dev/null || true
+sudo rpm --import https://brave-browser-rpm-release.s3.brave.com/brave-core.asc 2>/dev/null || true
+run_step "Brave Browser" sudo dnf install -y brave-browser
 
 # ---------------------------------------------------------------------------
 # 5. Ghostty Terminal
 # ---------------------------------------------------------------------------
 echo "[5/18] Installing Ghostty..."
-sudo dnf copr enable -y pgdev/ghostty || true
-sudo dnf install -y ghostty || ERRORS+=("Ghostty")
+sudo dnf copr enable -y pgdev/ghostty 2>/dev/null || true
+run_step "Ghostty" sudo dnf install -y ghostty
 
 # ---------------------------------------------------------------------------
 # 6. Zsh + Oh My Zsh + Powerlevel10k
 # ---------------------------------------------------------------------------
 echo "[6/18] Installing Zsh + Oh My Zsh + Powerlevel10k..."
-sudo dnf install -y zsh util-linux-user || ERRORS+=("Zsh")
+run_step "Zsh" sudo dnf install -y zsh util-linux-user
 
 # Install Oh My Zsh (unattended)
 if [ ! -d "$HOME/.oh-my-zsh" ]; then
-  sh -c "$(curl -fsSL https://raw.githubusercontent.com/ohmyzsh/ohmyzsh/master/tools/install.sh)" "" --unattended || ERRORS+=("Oh My Zsh")
+  run_step "Oh My Zsh" sh -c "$(curl -fsSL https://raw.githubusercontent.com/ohmyzsh/ohmyzsh/master/tools/install.sh)" "" --unattended
 fi
 
 # Install Powerlevel10k
 if [ ! -d "${ZSH_CUSTOM:-$HOME/.oh-my-zsh/custom}/themes/powerlevel10k" ]; then
-  git clone --depth=1 https://github.com/romkatv/powerlevel10k.git "${ZSH_CUSTOM:-$HOME/.oh-my-zsh/custom}/themes/powerlevel10k" || ERRORS+=("Powerlevel10k")
+  run_step "Powerlevel10k" git clone --depth=1 https://github.com/romkatv/powerlevel10k.git "${ZSH_CUSTOM:-$HOME/.oh-my-zsh/custom}/themes/powerlevel10k"
 fi
 
 # Set Powerlevel10k as theme
@@ -72,7 +90,7 @@ if [ -f ~/.zshrc ]; then
 fi
 
 # Change default shell to Zsh
-chsh -s $(which zsh) || ERRORS+=("Change shell to Zsh")
+chsh -s $(which zsh) 2>/dev/null || ERRORS+=("Change shell to Zsh — may need to run manually: chsh -s \$(which zsh)")
 
 # ---------------------------------------------------------------------------
 # 7. Fonts (Nerd Font for Powerlevel10k + coding)
@@ -80,95 +98,99 @@ chsh -s $(which zsh) || ERRORS+=("Change shell to Zsh")
 echo "[7/18] Installing fonts..."
 mkdir -p ~/.local/share/fonts
 cd ~/.local/share/fonts
-curl -fLO https://github.com/romkatv/powerlevel10k-media/raw/master/MesloLGS%20NF%20Regular.ttf || true
-curl -fLO https://github.com/romkatv/powerlevel10k-media/raw/master/MesloLGS%20NF%20Bold.ttf || true
-curl -fLO https://github.com/romkatv/powerlevel10k-media/raw/master/MesloLGS%20NF%20Italic.ttf || true
-curl -fLO https://github.com/romkatv/powerlevel10k-media/raw/master/MesloLGS%20NF%20Bold%20Italic.ttf || true
-sudo dnf install -y jetbrains-mono-fonts-all || true
-fc-cache -fv
+curl -fLO https://github.com/romkatv/powerlevel10k-media/raw/master/MesloLGS%20NF%20Regular.ttf 2>/dev/null || ERRORS+=("Font: MesloLGS Regular — download failed")
+curl -fLO https://github.com/romkatv/powerlevel10k-media/raw/master/MesloLGS%20NF%20Bold.ttf 2>/dev/null || true
+curl -fLO https://github.com/romkatv/powerlevel10k-media/raw/master/MesloLGS%20NF%20Italic.ttf 2>/dev/null || true
+curl -fLO https://github.com/romkatv/powerlevel10k-media/raw/master/MesloLGS%20NF%20Bold%20Italic.ttf 2>/dev/null || true
+sudo dnf install -y jetbrains-mono-fonts-all 2>/dev/null || ERRORS+=("JetBrains Mono font")
+fc-cache -fv 2>/dev/null
 cd ~
 
 # ---------------------------------------------------------------------------
 # 8. Git Setup
 # ---------------------------------------------------------------------------
 echo "[8/18] Installing Git..."
-sudo dnf install -y git git-credential-libsecret || ERRORS+=("Git")
+run_step "Git" sudo dnf install -y git git-credential-libsecret
 
 # ---------------------------------------------------------------------------
 # 9. Node.js via nvm
 # ---------------------------------------------------------------------------
 echo "[9/18] Installing Node.js via nvm..."
 if [ ! -d "$HOME/.nvm" ]; then
-  curl -o- https://raw.githubusercontent.com/nvm-sh/nvm/v0.40.1/install.sh | bash || ERRORS+=("nvm")
+  run_step "nvm" bash -c 'curl -o- https://raw.githubusercontent.com/nvm-sh/nvm/v0.40.1/install.sh | bash'
 fi
 export NVM_DIR="$HOME/.nvm"
 [ -s "$NVM_DIR/nvm.sh" ] && \. "$NVM_DIR/nvm.sh"
-nvm install --lts || ERRORS+=("Node.js LTS")
-nvm use --lts || true
+if command -v nvm &>/dev/null; then
+  run_step "Node.js LTS" nvm install --lts
+  nvm use --lts 2>/dev/null || true
+else
+  ERRORS+=("Node.js — nvm not loaded, restart terminal and run: nvm install --lts")
+fi
 
 # ---------------------------------------------------------------------------
 # 10. Python + pip + uv
 # ---------------------------------------------------------------------------
 echo "[10/18] Installing Python + uv..."
-sudo dnf install -y python3 python3-pip python3-devel || ERRORS+=("Python")
-curl -LsSf https://astral.sh/uv/install.sh | sh || ERRORS+=("uv")
+run_step "Python" sudo dnf install -y python3 python3-pip python3-devel
+run_step "uv" bash -c 'curl -LsSf https://astral.sh/uv/install.sh | sh'
 
 # ---------------------------------------------------------------------------
 # 11. Docker + Docker Compose
 # ---------------------------------------------------------------------------
 echo "[11/18] Installing Docker..."
-sudo dnf -y install dnf-plugins-core || true
-sudo dnf config-manager --add-repo https://download.docker.com/linux/fedora/docker-ce.repo || true
-sudo dnf install -y docker-ce docker-ce-cli containerd.io docker-buildx-plugin docker-compose-plugin || ERRORS+=("Docker")
-sudo systemctl start docker || true
-sudo systemctl enable docker || true
-sudo usermod -aG docker $USER || true
+sudo dnf -y install dnf-plugins-core 2>/dev/null || true
+sudo dnf config-manager --add-repo https://download.docker.com/linux/fedora/docker-ce.repo 2>/dev/null || ERRORS+=("Docker repo — could not add repo")
+run_step "Docker" sudo dnf install -y docker-ce docker-ce-cli containerd.io docker-buildx-plugin docker-compose-plugin
+sudo systemctl start docker 2>/dev/null || true
+sudo systemctl enable docker 2>/dev/null || true
+sudo usermod -aG docker $USER 2>/dev/null || true
 
 # ---------------------------------------------------------------------------
 # 12. Rust + Cargo
 # ---------------------------------------------------------------------------
 echo "[12/18] Installing Rust..."
 if ! command -v cargo &>/dev/null; then
-  curl --proto '=https' --tlsv1.2 -sSf https://sh.rustup.rs | sh -s -- -y || ERRORS+=("Rust")
-  source "$HOME/.cargo/env" || true
+  run_step "Rust" bash -c "curl --proto '=https' --tlsv1.2 -sSf https://sh.rustup.rs | sh -s -- -y"
+  [ -f "$HOME/.cargo/env" ] && source "$HOME/.cargo/env"
 fi
 
 # ---------------------------------------------------------------------------
 # 13. Kiro IDE
 # ---------------------------------------------------------------------------
 echo "[13/18] Installing Kiro IDE..."
-curl -fsSL https://raw.githubusercontent.com/abhilashiig/kiro-ide-linux-installation/main/clone-and-install-kiro.sh | bash || ERRORS+=("Kiro IDE")
+run_step "Kiro IDE" bash -c 'curl -fsSL https://raw.githubusercontent.com/abhilashiig/kiro-ide-linux-installation/main/clone-and-install-kiro.sh | bash'
 
 # ---------------------------------------------------------------------------
 # 14. Telegram + WhatsApp
 # ---------------------------------------------------------------------------
 echo "[14/18] Installing Telegram + WhatsApp..."
-flatpak install -y flathub org.telegram.desktop || ERRORS+=("Telegram")
-flatpak install -y flathub com.rtosta.zapzap || ERRORS+=("WhatsApp/ZapZap")
+run_step "Telegram" flatpak install -y flathub org.telegram.desktop
+run_step "WhatsApp (ZapZap)" flatpak install -y flathub com.rtosta.zapzap
 
 # ---------------------------------------------------------------------------
 # 15. Beekeeper Studio (Database GUI)
 # ---------------------------------------------------------------------------
 echo "[15/18] Installing Beekeeper Studio..."
-flatpak install -y flathub io.beekeeperstudio.Studio || ERRORS+=("Beekeeper Studio")
+run_step "Beekeeper Studio" flatpak install -y flathub io.beekeeperstudio.Studio
 
 # ---------------------------------------------------------------------------
 # 16. Bruno (API Client)
 # ---------------------------------------------------------------------------
 echo "[16/18] Installing Bruno..."
-flatpak install -y flathub com.usebruno.Bruno || ERRORS+=("Bruno")
+run_step "Bruno" flatpak install -y flathub com.usebruno.Bruno
 
 # ---------------------------------------------------------------------------
 # 17. Spotify
 # ---------------------------------------------------------------------------
 echo "[17/18] Installing Spotify..."
-flatpak install -y flathub com.spotify.Client || ERRORS+=("Spotify")
+run_step "Spotify" flatpak install -y flathub com.spotify.Client
 
 # ---------------------------------------------------------------------------
 # 18. GNOME Tweaks + Utilities
 # ---------------------------------------------------------------------------
 echo "[18/18] Installing utilities..."
-sudo dnf install -y \
+run_step "Utilities" sudo dnf install -y \
   gnome-tweaks \
   flameshot \
   htop \
@@ -179,7 +201,7 @@ sudo dnf install -y \
   make \
   gcc \
   gcc-c++ \
-  openssl-devel || ERRORS+=("Utilities")
+  openssl-devel
 
 # ---------------------------------------------------------------------------
 # SSH Key Generation
@@ -209,9 +231,13 @@ if [ ${#ERRORS[@]} -eq 0 ]; then
   echo "  ✅ Setup Complete! All steps succeeded."
 else
   echo "  ⚠️  Setup Complete with ${#ERRORS[@]} error(s):"
+  echo ""
   for err in "${ERRORS[@]}"; do
     echo "     ❌ $err"
   done
+  echo ""
+  echo "  Full log saved at: $LOGFILE"
+  echo "  Review errors with: cat $LOGFILE | grep -A5 'FAILED'"
 fi
 echo "=========================================="
 echo ""
