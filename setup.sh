@@ -1,6 +1,6 @@
 #!/bin/bash
 # =============================================================================
-# Fedora Fresh Install Setup Script
+# Fedora Fresh Install Setup Script (Fedora 41+ / dnf5 compatible)
 # Usage: bash <(curl -fsSL https://raw.githubusercontent.com/yebology/fedora-setup/main/setup.sh)
 # =============================================================================
 
@@ -16,6 +16,14 @@ echo "  Fedora Dev Setup - Starting..."
 echo "  Log file: $LOGFILE"
 echo "=========================================="
 
+# Detect dnf version (dnf5 vs dnf4)
+if dnf5 --version &>/dev/null || dnf --version 2>&1 | grep -q "dnf5"; then
+  DNF_ADD_REPO="sudo dnf config-manager addrepo --from-repofile="
+else
+  DNF_ADD_REPO="sudo dnf config-manager --add-repo "
+fi
+echo "  Using repo command: $DNF_ADD_REPO"
+
 # Helper: run a step and capture error with reason
 run_step() {
   local step_name="$1"
@@ -23,6 +31,21 @@ run_step() {
   echo ""
   echo "--- Running: $step_name ---"
   if "$@"; then
+    echo "--- ✅ $step_name succeeded ---"
+  else
+    local exit_code=$?
+    echo "--- ❌ $step_name FAILED (exit code: $exit_code) ---"
+    ERRORS+=("$step_name (exit code: $exit_code)")
+  fi
+}
+
+# Helper: run a step using eval (for commands with pipes or variables)
+run_step_eval() {
+  local step_name="$1"
+  shift
+  echo ""
+  echo "--- Running: $step_name ---"
+  if eval "$@"; then
     echo "--- ✅ $step_name succeeded ---"
   else
     local exit_code=$?
@@ -41,8 +64,8 @@ run_step "System Update" sudo dnf update -y
 # 2. RPM Fusion + Multimedia Codecs
 # ---------------------------------------------------------------------------
 echo "[2/18] Adding RPM Fusion repos + codecs..."
-run_step "RPM Fusion Free" sudo dnf install -y https://mirrors.rpmfusion.org/free/fedora/rpmfusion-free-release-$(rpm -E %fedora).noarch.rpm
-run_step "RPM Fusion Nonfree" sudo dnf install -y https://mirrors.rpmfusion.org/nonfree/fedora/rpmfusion-nonfree-release-$(rpm -E %fedora).noarch.rpm
+run_step "RPM Fusion Free" sudo dnf install -y "https://mirrors.rpmfusion.org/free/fedora/rpmfusion-free-release-$(rpm -E %fedora).noarch.rpm"
+run_step "RPM Fusion Nonfree" sudo dnf install -y "https://mirrors.rpmfusion.org/nonfree/fedora/rpmfusion-nonfree-release-$(rpm -E %fedora).noarch.rpm"
 run_step "Multimedia codecs" sudo dnf group install -y multimedia
 run_step "FFmpeg" sudo dnf install -y ffmpeg ffmpeg-libs
 
@@ -57,7 +80,7 @@ run_step "Flathub" flatpak remote-add --if-not-exists flathub https://dl.flathub
 # ---------------------------------------------------------------------------
 echo "[4/18] Installing Brave Browser..."
 sudo dnf install -y dnf-plugins-core 2>/dev/null || true
-sudo dnf config-manager --add-repo https://brave-browser-rpm-release.s3.brave.com/brave-browser.repo 2>/dev/null || true
+run_step_eval "Brave repo" "${DNF_ADD_REPO}https://brave-browser-rpm-release.s3.brave.com/brave-browser.repo"
 sudo rpm --import https://brave-browser-rpm-release.s3.brave.com/brave-core.asc 2>/dev/null || true
 run_step "Brave Browser" sudo dnf install -y brave-browser
 
@@ -76,7 +99,7 @@ run_step "Zsh" sudo dnf install -y zsh util-linux-user
 
 # Install Oh My Zsh (unattended)
 if [ ! -d "$HOME/.oh-my-zsh" ]; then
-  run_step "Oh My Zsh" sh -c "$(curl -fsSL https://raw.githubusercontent.com/ohmyzsh/ohmyzsh/master/tools/install.sh)" "" --unattended
+  run_step_eval "Oh My Zsh" 'sh -c "$(curl -fsSL https://raw.githubusercontent.com/ohmyzsh/ohmyzsh/master/tools/install.sh)" "" --unattended'
 fi
 
 # Install Powerlevel10k
@@ -90,7 +113,7 @@ if [ -f ~/.zshrc ]; then
 fi
 
 # Change default shell to Zsh
-chsh -s $(which zsh) 2>/dev/null || ERRORS+=("Change shell to Zsh — may need to run manually: chsh -s \$(which zsh)")
+chsh -s "$(which zsh)" 2>/dev/null || ERRORS+=("Change shell to Zsh — run manually: chsh -s \$(which zsh)")
 
 # ---------------------------------------------------------------------------
 # 7. Fonts (Nerd Font for Powerlevel10k + coding)
@@ -98,11 +121,11 @@ chsh -s $(which zsh) 2>/dev/null || ERRORS+=("Change shell to Zsh — may need t
 echo "[7/18] Installing fonts..."
 mkdir -p ~/.local/share/fonts
 cd ~/.local/share/fonts
-curl -fLO https://github.com/romkatv/powerlevel10k-media/raw/master/MesloLGS%20NF%20Regular.ttf 2>/dev/null || ERRORS+=("Font: MesloLGS Regular — download failed")
+curl -fLO https://github.com/romkatv/powerlevel10k-media/raw/master/MesloLGS%20NF%20Regular.ttf 2>/dev/null || ERRORS+=("Font: MesloLGS Regular")
 curl -fLO https://github.com/romkatv/powerlevel10k-media/raw/master/MesloLGS%20NF%20Bold.ttf 2>/dev/null || true
 curl -fLO https://github.com/romkatv/powerlevel10k-media/raw/master/MesloLGS%20NF%20Italic.ttf 2>/dev/null || true
 curl -fLO https://github.com/romkatv/powerlevel10k-media/raw/master/MesloLGS%20NF%20Bold%20Italic.ttf 2>/dev/null || true
-sudo dnf install -y jetbrains-mono-fonts-all 2>/dev/null || ERRORS+=("JetBrains Mono font")
+run_step "JetBrains Mono font" sudo dnf install -y jetbrains-mono-fonts-all
 fc-cache -fv 2>/dev/null
 cd ~
 
@@ -117,7 +140,7 @@ run_step "Git" sudo dnf install -y git git-credential-libsecret
 # ---------------------------------------------------------------------------
 echo "[9/18] Installing Node.js via nvm..."
 if [ ! -d "$HOME/.nvm" ]; then
-  run_step "nvm" bash -c 'curl -o- https://raw.githubusercontent.com/nvm-sh/nvm/v0.40.1/install.sh | bash'
+  run_step_eval "nvm" 'curl -o- https://raw.githubusercontent.com/nvm-sh/nvm/v0.40.1/install.sh | bash'
 fi
 export NVM_DIR="$HOME/.nvm"
 [ -s "$NVM_DIR/nvm.sh" ] && \. "$NVM_DIR/nvm.sh"
@@ -133,25 +156,25 @@ fi
 # ---------------------------------------------------------------------------
 echo "[10/18] Installing Python + uv..."
 run_step "Python" sudo dnf install -y python3 python3-pip python3-devel
-run_step "uv" bash -c 'curl -LsSf https://astral.sh/uv/install.sh | sh'
+run_step_eval "uv" 'curl -LsSf https://astral.sh/uv/install.sh | sh'
 
 # ---------------------------------------------------------------------------
 # 11. Docker + Docker Compose
 # ---------------------------------------------------------------------------
 echo "[11/18] Installing Docker..."
 sudo dnf -y install dnf-plugins-core 2>/dev/null || true
-sudo dnf config-manager --add-repo https://download.docker.com/linux/fedora/docker-ce.repo 2>/dev/null || ERRORS+=("Docker repo — could not add repo")
+run_step_eval "Docker repo" "${DNF_ADD_REPO}https://download.docker.com/linux/fedora/docker-ce.repo"
 run_step "Docker" sudo dnf install -y docker-ce docker-ce-cli containerd.io docker-buildx-plugin docker-compose-plugin
 sudo systemctl start docker 2>/dev/null || true
 sudo systemctl enable docker 2>/dev/null || true
-sudo usermod -aG docker $USER 2>/dev/null || true
+sudo usermod -aG docker "$USER" 2>/dev/null || true
 
 # ---------------------------------------------------------------------------
 # 12. Rust + Cargo
 # ---------------------------------------------------------------------------
 echo "[12/18] Installing Rust..."
 if ! command -v cargo &>/dev/null; then
-  run_step "Rust" bash -c "curl --proto '=https' --tlsv1.2 -sSf https://sh.rustup.rs | sh -s -- -y"
+  run_step_eval "Rust" "curl --proto '=https' --tlsv1.2 -sSf https://sh.rustup.rs | sh -s -- -y"
   [ -f "$HOME/.cargo/env" ] && source "$HOME/.cargo/env"
 fi
 
@@ -159,7 +182,7 @@ fi
 # 13. Kiro IDE
 # ---------------------------------------------------------------------------
 echo "[13/18] Installing Kiro IDE..."
-run_step "Kiro IDE" bash -c 'curl -fsSL https://raw.githubusercontent.com/abhilashiig/kiro-ide-linux-installation/main/clone-and-install-kiro.sh | bash'
+run_step_eval "Kiro IDE" 'curl -fsSL https://raw.githubusercontent.com/abhilashiig/kiro-ide-linux-installation/main/clone-and-install-kiro.sh | bash'
 
 # ---------------------------------------------------------------------------
 # 14. Telegram + WhatsApp
@@ -237,7 +260,7 @@ else
   done
   echo ""
   echo "  Full log saved at: $LOGFILE"
-  echo "  Review errors with: cat $LOGFILE | grep -A5 'FAILED'"
+  echo "  Review errors: grep -B2 -A5 'FAILED' $LOGFILE"
 fi
 echo "=========================================="
 echo ""
