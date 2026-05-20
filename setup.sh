@@ -38,7 +38,7 @@ flatpak remote-add --if-not-exists flathub https://dl.flathub.org/repo/flathub.f
 # ---------------------------------------------------------------------------
 echo "[4/18] Installing Brave Browser..."
 sudo dnf install -y dnf-plugins-core
-sudo dnf config-manager addrepo --from-repofile=https://brave-browser-rpm-release.s3.brave.com/brave-browser.repo
+sudo dnf config-manager --add-repo https://brave-browser-rpm-release.s3.brave.com/brave-browser.repo
 sudo rpm --import https://brave-browser-rpm-release.s3.brave.com/brave-core.asc
 sudo dnf install -y brave-browser
 
@@ -109,7 +109,7 @@ curl -LsSf https://astral.sh/uv/install.sh | sh
 # ---------------------------------------------------------------------------
 echo "[11/18] Installing Docker..."
 sudo dnf -y install dnf-plugins-core
-sudo dnf config-manager addrepo --from-repofile=https://download.docker.com/linux/fedora/docker-ce.repo
+sudo dnf config-manager --add-repo https://download.docker.com/linux/fedora/docker-ce.repo
 sudo dnf install -y docker-ce docker-ce-cli containerd.io docker-buildx-plugin docker-compose-plugin
 sudo systemctl start docker
 sudo systemctl enable docker
@@ -123,18 +123,16 @@ curl --proto '=https' --tlsv1.2 -sSf https://sh.rustup.rs | sh -s -- -y
 source "$HOME/.cargo/env"
 
 # ---------------------------------------------------------------------------
-# 13. Kiro
+# 13. Kiro IDE
 # ---------------------------------------------------------------------------
-echo "[13/18] Kiro..."
-echo "  >> Download manually: https://kiro.dev/downloads"
-echo "  >> Install: sudo dnf install ./kiro-*.rpm"
+echo "[13/18] Installing Kiro IDE..."
+curl -fsSL https://raw.githubusercontent.com/abhilashiig/kiro-ide-linux-installation/main/clone-and-install-kiro.sh | bash
 
 # ---------------------------------------------------------------------------
 # 14. Telegram + WhatsApp
 # ---------------------------------------------------------------------------
 echo "[14/18] Installing Telegram + WhatsApp..."
 flatpak install -y flathub org.telegram.desktop
-flatpak install -y flathub io.github.nickvision.cavalier 2>/dev/null || true
 flatpak install -y flathub com.rtosta.zapzap
 
 # ---------------------------------------------------------------------------
@@ -202,10 +200,9 @@ echo "  Next steps:"
 echo "  1. Reboot (for Docker group + Zsh to take effect)"
 echo "  2. Open Ghostty -> Powerlevel10k config wizard will start"
 echo "  3. Set Ghostty font to 'MesloLGS NF'"
-echo "  4. Download & install Kiro from https://kiro.dev/downloads"
-echo "  5. git config --global user.name \"Your Name\""
-echo "  6. git config --global user.email \"your@email.com\""
-echo "  7. Add SSH key to GitHub: https://github.com/settings/keys"
+echo "  4. git config --global user.name \"Your Name\""
+echo "  5. git config --global user.email \"your@email.com\""
+echo "  6. Add SSH key to GitHub: https://github.com/settings/keys"
 echo ""
 read -p "  Reboot now? (y/n) " r
 [ "$r" = "y" ] && sudo reboot
