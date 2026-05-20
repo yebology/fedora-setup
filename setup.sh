@@ -66,8 +66,8 @@ run_step "System Update" sudo dnf update -y
 echo "[2/18] Adding RPM Fusion repos + codecs..."
 run_step "RPM Fusion Free" sudo dnf install -y "https://mirrors.rpmfusion.org/free/fedora/rpmfusion-free-release-$(rpm -E %fedora).noarch.rpm"
 run_step "RPM Fusion Nonfree" sudo dnf install -y "https://mirrors.rpmfusion.org/nonfree/fedora/rpmfusion-nonfree-release-$(rpm -E %fedora).noarch.rpm"
-run_step "Multimedia codecs" sudo dnf group install -y multimedia
-run_step "FFmpeg" sudo dnf install -y ffmpeg ffmpeg-libs
+run_step "Multimedia codecs" sudo dnf group install -y multimedia --allowerasing
+run_step "FFmpeg" sudo dnf install -y --allowerasing ffmpeg ffmpeg-libs
 
 # ---------------------------------------------------------------------------
 # 3. Flathub
@@ -88,8 +88,18 @@ run_step "Brave Browser" sudo dnf install -y brave-browser
 # 5. Ghostty Terminal
 # ---------------------------------------------------------------------------
 echo "[5/18] Installing Ghostty..."
+# Try multiple COPR repos (pgdev or scottames)
 sudo dnf copr enable -y pgdev/ghostty 2>/dev/null || true
-run_step "Ghostty" sudo dnf install -y ghostty
+if ! sudo dnf install -y ghostty 2>/dev/null; then
+  echo "  pgdev/ghostty not available, trying scottames/ghostty..."
+  sudo dnf copr enable -y scottames/ghostty 2>/dev/null || true
+  if ! sudo dnf install -y ghostty 2>/dev/null; then
+    echo "  COPR repos failed, trying official Fedora repo..."
+    if ! sudo dnf install -y ghostty 2>/dev/null; then
+      ERRORS+=("Ghostty — not available in repos. Install manually: https://ghostty.org/docs/linux")
+    fi
+  fi
+fi
 
 # ---------------------------------------------------------------------------
 # 6. Zsh + Oh My Zsh + Powerlevel10k
@@ -164,7 +174,7 @@ run_step_eval "uv" 'curl -LsSf https://astral.sh/uv/install.sh | sh'
 echo "[11/18] Installing Docker..."
 sudo dnf -y install dnf-plugins-core 2>/dev/null || true
 run_step_eval "Docker repo" "${DNF_ADD_REPO}https://download.docker.com/linux/fedora/docker-ce.repo"
-run_step "Docker" sudo dnf install -y docker-ce docker-ce-cli containerd.io docker-buildx-plugin docker-compose-plugin
+run_step "Docker" sudo dnf install -y --allowerasing docker-ce docker-ce-cli containerd.io docker-buildx-plugin docker-compose-plugin
 sudo systemctl start docker 2>/dev/null || true
 sudo systemctl enable docker 2>/dev/null || true
 sudo usermod -aG docker "$USER" 2>/dev/null || true
