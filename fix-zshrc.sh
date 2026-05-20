@@ -1,22 +1,18 @@
 #!/bin/bash
 # =============================================================================
-# Nuclear reset .zshrc (delete and regenerate)
+# Create clean .zshrc from scratch (no Oh My Zsh reinstall needed)
 # Usage: bash <(curl -fsSL https://raw.githubusercontent.com/yebology/fedora-setup/main/fix-zshrc.sh)
 # =============================================================================
 
-# Delete broken .zshrc completely
-rm -f ~/.zshrc
+cat > ~/.zshrc << 'EOF'
+fastfetch
 
-# Regenerate fresh from Oh My Zsh
-sh -c "$(curl -fsSL https://raw.githubusercontent.com/ohmyzsh/ohmyzsh/master/tools/install.sh)" "" --unattended
+export ZSH="$HOME/.oh-my-zsh"
+ZSH_THEME="powerlevel10k/powerlevel10k"
+plugins=(git)
+source $ZSH/oh-my-zsh.sh
 
-# Set Powerlevel10k theme
-sed -i 's/ZSH_THEME="robbyrussell"/ZSH_THEME="powerlevel10k\/powerlevel10k"/' ~/.zshrc
-
-# Add fastfetch at line 1
-sed -i '1i\fastfetch' ~/.zshrc
-
-# Add p10k source at end
-echo '[[ ! -f ~/.p10k.zsh ]] || source ~/.p10k.zsh' >> ~/.zshrc
+[[ ! -f ~/.p10k.zsh ]] || source ~/.p10k.zsh
+EOF
 
 echo "✅ Done! Restart Ghostty."
