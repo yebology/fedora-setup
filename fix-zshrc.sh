@@ -1,10 +1,13 @@
 #!/bin/bash
 # =============================================================================
-# Fix .zshrc parse error (orphan fi)
+# Fix .zshrc broken p10k source line
 # Usage: bash <(curl -fsSL https://raw.githubusercontent.com/yebology/fedora-setup/main/fix-zshrc.sh)
 # =============================================================================
 
-# Remove any orphan fi (with or without leading whitespace)
-sed -i '/^[[:space:]]*fi[[:space:]]*$/d' ~/.zshrc
+# Remove broken p10k source line(s)
+sed -i '/^\[\[.*p10k/d' ~/.zshrc
+
+# Add correct p10k source line at end
+echo '[[ ! -f ~/.p10k.zsh ]] || source ~/.p10k.zsh' >> ~/.zshrc
 
 echo "✅ Done! Restart Ghostty."
