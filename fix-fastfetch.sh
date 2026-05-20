@@ -1,25 +1,17 @@
 #!/bin/bash
 # =============================================================================
-# Fix fastfetch logo color + simplify .zshrc
+# Fix fastfetch color on Ghostty startup
 # Usage: bash <(curl -fsSL https://raw.githubusercontent.com/yebology/fedora-setup/main/fix-fastfetch.sh)
 # =============================================================================
 
-# Create fastfetch config with blue Fedora logo
-mkdir -p ~/.config/fastfetch
-cat > ~/.config/fastfetch/config.jsonc << 'EOF'
-{
-  "$schema": "https://github.com/fastfetch-cli/fastfetch/raw/dev/doc/json_schema.json",
-  "logo": {
-    "source": "fedora",
-    "color": {
-      "1": "blue",
-      "2": "white"
-    }
-  }
-}
-EOF
+# Remove broken config if exists
+rm -f ~/.config/fastfetch/config.jsonc
 
-# Simplify .zshrc — remove flags, just call fastfetch
-sed -i 's/fastfetch.*/fastfetch/' ~/.zshrc
+# Clean all fastfetch lines from .zshrc
+sed -i '/fastfetch/d' ~/.zshrc
+sed -i '/TERM=xterm/d' ~/.zshrc
 
-echo "✅ Done! Restart Ghostty to see blue Fedora logo."
+# Add fastfetch with forced color support at end of .zshrc
+echo 'TERM=xterm-256color fastfetch' >> ~/.zshrc
+
+echo "✅ Done! Close ALL Ghostty windows and reopen."
