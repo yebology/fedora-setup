@@ -1,6 +1,6 @@
 #!/bin/bash
 # =============================================================================
-# Minimal fastfetch config (clean, simple)
+# Fastfetch config - full info + color palette
 # Usage: bash <(curl -fsSL https://raw.githubusercontent.com/yebology/fedora-setup/main/fix-fastfetch.sh)
 # =============================================================================
 
@@ -9,25 +9,26 @@ mkdir -p ~/.config/fastfetch
 cat > ~/.config/fastfetch/config.jsonc << 'EOF'
 {
   "$schema": "https://github.com/fastfetch-cli/fastfetch/raw/dev/doc/json_schema.json",
-  "logo": {
-    "source": "fedora",
-    "padding": {
-      "top": 1
-    }
-  },
   "modules": [
     "title",
     "separator",
     "os",
+    "host",
     "kernel",
+    "uptime",
+    "packages",
     "shell",
-    "terminal",
+    "display",
     "cpu",
+    "gpu",
     "memory",
     "disk",
-    "battery"
+    "localip",
+    "battery",
+    "separator",
+    "colors"
   ]
 }
 EOF
 
-echo "✅ Done! Restart Ghostty or run 'fastfetch' to see."
+echo "✅ Done! Restart Ghostty to see full info + color palette."
