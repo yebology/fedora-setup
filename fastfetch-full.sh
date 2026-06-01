@@ -1,6 +1,6 @@
 #!/bin/bash
 # =============================================================================
-# Fastfetch full info + color palette config
+# Fastfetch full info + wider logo
 # Usage: bash <(curl -fsSL https://raw.githubusercontent.com/yebology/fedora-setup/main/fastfetch-full.sh)
 # =============================================================================
 
@@ -9,6 +9,13 @@ mkdir -p ~/.config/fastfetch
 cat > ~/.config/fastfetch/config.jsonc << 'EOF'
 {
   "$schema": "https://github.com/fastfetch-cli/fastfetch/raw/dev/doc/json_schema.json",
+  "logo": {
+    "padding": {
+      "top": 1,
+      "left": 2,
+      "right": 4
+    }
+  },
   "modules": [
     "title",
     "separator",
@@ -31,4 +38,4 @@ cat > ~/.config/fastfetch/config.jsonc << 'EOF'
 }
 EOF
 
-echo "✅ Done! Restart Ghostty to see full info + color palette."
+echo "✅ Done! Restart Ghostty."
