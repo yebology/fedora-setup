@@ -74,6 +74,12 @@ check_cmd "Docker" "docker"
 check_cmd "Rust (cargo)" "cargo"
 check_cmd "Ghostty" "ghostty"
 
+# Foundry (Solidity)
+export PATH="$HOME/.foundry/bin:$PATH"
+check_cmd "Forge (Foundry)" "forge"
+check_cmd "Cast (Foundry)" "cast"
+check_cmd "Anvil (Foundry)" "anvil"
+
 # Claude Code CLI + plugins
 if command -v claude &>/dev/null; then
   echo "  ✅ Claude Code CLI"

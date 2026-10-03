@@ -22,6 +22,7 @@ bash <(curl -fsSL https://raw.githubusercontent.com/yebology/fedora-setup/main/s
 | AI Coding | Claude Code CLI + 9 plugins (github, frontend-design, superpowers, code-review, context7, skill-creator, code-simplifier, claude-md-management, feature-dev) |
 | Python | Python 3 + pip + uv |
 | Rust | Rust + Cargo (via rustup) |
+| Solidity | Foundry (forge, cast, anvil, chisel) |
 | Containers | Docker + Docker Compose |
 | Chat | Telegram (Flatpak) |
 | Music | Spotify (Flatpak) |
