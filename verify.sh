@@ -105,6 +105,15 @@ if command -v claude &>/dev/null; then
       ((FAIL++))
     fi
   done
+  for plugin in "headroom" "ponytail" "claude-mem"; do
+    if echo "$INSTALLED_PLUGINS" | grep -qi "$plugin"; then
+      echo "  ✅ Claude plugin: $plugin"
+      ((PASS++))
+    else
+      echo "  ❌ Claude plugin: $plugin — NOT FOUND"
+      ((FAIL++))
+    fi
+  done
 else
   echo "  ❌ Claude Code CLI — NOT FOUND"
   ((FAIL++))
@@ -130,6 +139,7 @@ check_cmd "VS Code" "code"
 echo ""
 echo "--- Apps (Flatpak) ---"
 check_flatpak "Telegram" "telegram"
+check_flatpak "Obsidian" "obsidian"
 check_flatpak "Spotify" "spotify"
 
 echo ""
