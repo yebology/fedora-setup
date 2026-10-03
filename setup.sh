@@ -57,13 +57,13 @@ run_step_eval() {
 # ---------------------------------------------------------------------------
 # 1. System Update
 # ---------------------------------------------------------------------------
-echo "[1/15] Updating system..."
+echo "[1/16] Updating system..."
 run_step "System Update" sudo dnf update -y
 
 # ---------------------------------------------------------------------------
 # 2. RPM Fusion + Multimedia Codecs
 # ---------------------------------------------------------------------------
-echo "[2/15] Adding RPM Fusion repos + codecs..."
+echo "[2/16] Adding RPM Fusion repos + codecs..."
 run_step "RPM Fusion Free" sudo dnf install -y "https://mirrors.rpmfusion.org/free/fedora/rpmfusion-free-release-$(rpm -E %fedora).noarch.rpm"
 run_step "RPM Fusion Nonfree" sudo dnf install -y "https://mirrors.rpmfusion.org/nonfree/fedora/rpmfusion-nonfree-release-$(rpm -E %fedora).noarch.rpm"
 run_step "Multimedia codecs" sudo dnf group install -y multimedia --allowerasing
@@ -72,22 +72,30 @@ run_step "FFmpeg" sudo dnf install -y --allowerasing ffmpeg ffmpeg-libs
 # ---------------------------------------------------------------------------
 # 3. Flathub
 # ---------------------------------------------------------------------------
-echo "[3/15] Enabling Flathub..."
+echo "[3/16] Enabling Flathub..."
 run_step "Flathub" flatpak remote-add --if-not-exists flathub https://dl.flathub.org/repo/flathub.flatpakrepo
 
 # ---------------------------------------------------------------------------
 # 4. Brave Browser
 # ---------------------------------------------------------------------------
-echo "[4/15] Installing Brave Browser..."
+echo "[4/16] Installing Brave Browser..."
 sudo dnf install -y dnf-plugins-core 2>/dev/null || true
 run_step_eval "Brave repo" "${DNF_ADD_REPO}https://brave-browser-rpm-release.s3.brave.com/brave-browser.repo"
 sudo rpm --import https://brave-browser-rpm-release.s3.brave.com/brave-core.asc 2>/dev/null || true
 run_step "Brave Browser" sudo dnf install -y brave-browser
 
 # ---------------------------------------------------------------------------
-# 5. Ghostty Terminal
+# 5. Visual Studio Code
 # ---------------------------------------------------------------------------
-echo "[5/15] Installing Ghostty..."
+echo "[5/16] Installing Visual Studio Code..."
+sudo rpm --import https://packages.microsoft.com/keys/microsoft.asc 2>/dev/null || true
+run_step_eval "VS Code repo" "${DNF_ADD_REPO}https://packages.microsoft.com/yumrepos/vscode/config.repo"
+run_step "VS Code" sudo dnf install -y code
+
+# ---------------------------------------------------------------------------
+# 6. Ghostty Terminal
+# ---------------------------------------------------------------------------
+echo "[6/16] Installing Ghostty..."
 # Try multiple COPR repos (pgdev or scottames)
 sudo dnf copr enable -y pgdev/ghostty 2>/dev/null || true
 if ! sudo dnf install -y ghostty 2>/dev/null; then
@@ -102,9 +110,9 @@ if ! sudo dnf install -y ghostty 2>/dev/null; then
 fi
 
 # ---------------------------------------------------------------------------
-# 6. Zsh + Oh My Zsh + Powerlevel10k
+# 7. Zsh + Oh My Zsh + Powerlevel10k
 # ---------------------------------------------------------------------------
-echo "[6/15] Installing Zsh + Oh My Zsh + Powerlevel10k..."
+echo "[7/16] Installing Zsh + Oh My Zsh + Powerlevel10k..."
 run_step "Zsh" sudo dnf install -y zsh util-linux-user
 
 # Install Oh My Zsh (unattended)
@@ -126,9 +134,9 @@ fi
 chsh -s "$(which zsh)" 2>/dev/null || ERRORS+=("Change shell to Zsh — run manually: chsh -s \$(which zsh)")
 
 # ---------------------------------------------------------------------------
-# 7. Fonts (Nerd Font for Powerlevel10k + coding)
+# 8. Fonts (Nerd Font for Powerlevel10k + coding)
 # ---------------------------------------------------------------------------
-echo "[7/15] Installing fonts..."
+echo "[8/16] Installing fonts..."
 mkdir -p ~/.local/share/fonts
 cd ~/.local/share/fonts
 curl -fLO https://github.com/romkatv/powerlevel10k-media/raw/master/MesloLGS%20NF%20Regular.ttf 2>/dev/null || ERRORS+=("Font: MesloLGS Regular")
@@ -140,15 +148,15 @@ fc-cache -fv 2>/dev/null
 cd ~
 
 # ---------------------------------------------------------------------------
-# 8. Git Setup
+# 9. Git Setup
 # ---------------------------------------------------------------------------
-echo "[8/15] Installing Git..."
+echo "[9/16] Installing Git..."
 run_step "Git" sudo dnf install -y git git-credential-libsecret
 
 # ---------------------------------------------------------------------------
-# 9. Node.js via nvm
+# 10. Node.js via nvm
 # ---------------------------------------------------------------------------
-echo "[9/15] Installing Node.js via nvm..."
+echo "[10/16] Installing Node.js via nvm..."
 if [ ! -d "$HOME/.nvm" ]; then
   run_step_eval "nvm" 'curl -o- https://raw.githubusercontent.com/nvm-sh/nvm/v0.40.1/install.sh | bash'
 fi
@@ -162,16 +170,16 @@ else
 fi
 
 # ---------------------------------------------------------------------------
-# 10. Python + pip + uv
+# 11. Python + pip + uv
 # ---------------------------------------------------------------------------
-echo "[10/15] Installing Python + uv..."
+echo "[11/16] Installing Python + uv..."
 run_step "Python" sudo dnf install -y python3 python3-pip python3-devel
 run_step_eval "uv" 'curl -LsSf https://astral.sh/uv/install.sh | sh'
 
 # ---------------------------------------------------------------------------
-# 11. Docker + Docker Compose
+# 12. Docker + Docker Compose
 # ---------------------------------------------------------------------------
-echo "[11/15] Installing Docker..."
+echo "[12/16] Installing Docker..."
 sudo dnf -y install dnf-plugins-core 2>/dev/null || true
 run_step_eval "Docker repo" "${DNF_ADD_REPO}https://download.docker.com/linux/fedora/docker-ce.repo"
 run_step "Docker" sudo dnf install -y --allowerasing docker-ce docker-ce-cli containerd.io docker-buildx-plugin docker-compose-plugin
@@ -180,30 +188,30 @@ sudo systemctl enable docker 2>/dev/null || true
 sudo usermod -aG docker "$USER" 2>/dev/null || true
 
 # ---------------------------------------------------------------------------
-# 12. Rust + Cargo
+# 13. Rust + Cargo
 # ---------------------------------------------------------------------------
-echo "[12/15] Installing Rust..."
+echo "[13/16] Installing Rust..."
 if ! command -v cargo &>/dev/null; then
   run_step_eval "Rust" "curl --proto '=https' --tlsv1.2 -sSf https://sh.rustup.rs | sh -s -- -y"
   [ -f "$HOME/.cargo/env" ] && source "$HOME/.cargo/env"
 fi
 
 # ---------------------------------------------------------------------------
-# 13. Telegram
+# 14. Telegram
 # ---------------------------------------------------------------------------
-echo "[13/15] Installing Telegram..."
+echo "[14/16] Installing Telegram..."
 run_step "Telegram" flatpak install -y flathub org.telegram.desktop
 
 # ---------------------------------------------------------------------------
-# 14. Spotify
+# 15. Spotify
 # ---------------------------------------------------------------------------
-echo "[14/15] Installing Spotify..."
+echo "[15/16] Installing Spotify..."
 run_step "Spotify" flatpak install -y flathub com.spotify.Client
 
 # ---------------------------------------------------------------------------
-# 15. GNOME Tweaks + Utilities
+# 16. GNOME Tweaks + Utilities
 # ---------------------------------------------------------------------------
-echo "[15/15] Installing utilities..."
+echo "[16/16] Installing utilities..."
 run_step "Utilities" sudo dnf install -y \
   gnome-tweaks \
   flameshot \

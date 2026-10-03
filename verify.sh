@@ -88,6 +88,10 @@ echo "--- Browsers ---"
 check_cmd "Brave Browser" "brave-browser"
 
 echo ""
+echo "--- Editor ---"
+check_cmd "VS Code" "code"
+
+echo ""
 echo "--- Apps (Flatpak) ---"
 check_flatpak "Telegram" "telegram"
 check_flatpak "Spotify" "spotify"

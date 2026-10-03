@@ -15,6 +15,7 @@ bash <(curl -fsSL https://raw.githubusercontent.com/yebology/fedora-setup/main/s
 | Category | Tools |
 |----------|-------|
 | Browser | Brave |
+| Editor | VS Code |
 | Terminal | Ghostty + Zsh + Oh My Zsh + Powerlevel10k |
 | Fonts | MesloLGS Nerd Font + JetBrains Mono |
 | JavaScript | Node.js (LTS via nvm) |
