@@ -21,8 +21,8 @@ bash <(curl -fsSL https://raw.githubusercontent.com/yebology/fedora-setup/main/s
 | Python | Python 3 + pip + uv |
 | Rust | Rust + Cargo (via rustup) |
 | Containers | Docker + Docker Compose |
-| Editor | Kiro (manual download) |
 | Chat | Telegram (Flatpak) |
+| Music | Spotify (Flatpak) |
 | Utilities | Git, Make, GCC, htop, neofetch, Flameshot, GNOME Tweaks |
 | Repos | RPM Fusion + Flathub |
 | Media | FFmpeg + multimedia codecs |
@@ -32,6 +32,6 @@ bash <(curl -fsSL https://raw.githubusercontent.com/yebology/fedora-setup/main/s
 1. Reboot
 2. Open Ghostty → Powerlevel10k wizard starts automatically
 3. Set Ghostty font to `MesloLGS NF`
-4. Download & install [Kiro](https://kiro.dev/downloads) `.rpm`
-5. Configure git name/email
-6. Add SSH key to [GitHub](https://github.com/settings/keys)
+4. Configure git name/email
+5. Add SSH key to [GitHub](https://github.com/settings/keys)
+6. (Optional) Download & install [Kiro](https://kiro.dev/downloads) `.rpm`

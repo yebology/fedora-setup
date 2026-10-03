@@ -83,15 +83,6 @@ else
   ((FAIL++))
 fi
 
-# Kiro
-if command -v kiro &>/dev/null || [ -d "/opt/kiro" ] || [ -d "$HOME/.local/share/kiro" ]; then
-  echo "  ✅ Kiro IDE"
-  ((PASS++))
-else
-  echo "  ❌ Kiro IDE — NOT FOUND"
-  ((FAIL++))
-fi
-
 echo ""
 echo "--- Browsers ---"
 check_cmd "Brave Browser" "brave-browser"
@@ -99,9 +90,6 @@ check_cmd "Brave Browser" "brave-browser"
 echo ""
 echo "--- Apps (Flatpak) ---"
 check_flatpak "Telegram" "telegram"
-check_flatpak "WhatsApp (ZapZap)" "zapzap"
-check_flatpak "Beekeeper Studio" "beekeeperstudio"
-check_flatpak "Bruno" "bruno"
 check_flatpak "Spotify" "spotify"
 
 echo ""

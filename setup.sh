@@ -57,13 +57,13 @@ run_step_eval() {
 # ---------------------------------------------------------------------------
 # 1. System Update
 # ---------------------------------------------------------------------------
-echo "[1/18] Updating system..."
+echo "[1/15] Updating system..."
 run_step "System Update" sudo dnf update -y
 
 # ---------------------------------------------------------------------------
 # 2. RPM Fusion + Multimedia Codecs
 # ---------------------------------------------------------------------------
-echo "[2/18] Adding RPM Fusion repos + codecs..."
+echo "[2/15] Adding RPM Fusion repos + codecs..."
 run_step "RPM Fusion Free" sudo dnf install -y "https://mirrors.rpmfusion.org/free/fedora/rpmfusion-free-release-$(rpm -E %fedora).noarch.rpm"
 run_step "RPM Fusion Nonfree" sudo dnf install -y "https://mirrors.rpmfusion.org/nonfree/fedora/rpmfusion-nonfree-release-$(rpm -E %fedora).noarch.rpm"
 run_step "Multimedia codecs" sudo dnf group install -y multimedia --allowerasing
@@ -72,13 +72,13 @@ run_step "FFmpeg" sudo dnf install -y --allowerasing ffmpeg ffmpeg-libs
 # ---------------------------------------------------------------------------
 # 3. Flathub
 # ---------------------------------------------------------------------------
-echo "[3/18] Enabling Flathub..."
+echo "[3/15] Enabling Flathub..."
 run_step "Flathub" flatpak remote-add --if-not-exists flathub https://dl.flathub.org/repo/flathub.flatpakrepo
 
 # ---------------------------------------------------------------------------
 # 4. Brave Browser
 # ---------------------------------------------------------------------------
-echo "[4/18] Installing Brave Browser..."
+echo "[4/15] Installing Brave Browser..."
 sudo dnf install -y dnf-plugins-core 2>/dev/null || true
 run_step_eval "Brave repo" "${DNF_ADD_REPO}https://brave-browser-rpm-release.s3.brave.com/brave-browser.repo"
 sudo rpm --import https://brave-browser-rpm-release.s3.brave.com/brave-core.asc 2>/dev/null || true
@@ -87,7 +87,7 @@ run_step "Brave Browser" sudo dnf install -y brave-browser
 # ---------------------------------------------------------------------------
 # 5. Ghostty Terminal
 # ---------------------------------------------------------------------------
-echo "[5/18] Installing Ghostty..."
+echo "[5/15] Installing Ghostty..."
 # Try multiple COPR repos (pgdev or scottames)
 sudo dnf copr enable -y pgdev/ghostty 2>/dev/null || true
 if ! sudo dnf install -y ghostty 2>/dev/null; then
@@ -104,7 +104,7 @@ fi
 # ---------------------------------------------------------------------------
 # 6. Zsh + Oh My Zsh + Powerlevel10k
 # ---------------------------------------------------------------------------
-echo "[6/18] Installing Zsh + Oh My Zsh + Powerlevel10k..."
+echo "[6/15] Installing Zsh + Oh My Zsh + Powerlevel10k..."
 run_step "Zsh" sudo dnf install -y zsh util-linux-user
 
 # Install Oh My Zsh (unattended)
@@ -128,7 +128,7 @@ chsh -s "$(which zsh)" 2>/dev/null || ERRORS+=("Change shell to Zsh — run manu
 # ---------------------------------------------------------------------------
 # 7. Fonts (Nerd Font for Powerlevel10k + coding)
 # ---------------------------------------------------------------------------
-echo "[7/18] Installing fonts..."
+echo "[7/15] Installing fonts..."
 mkdir -p ~/.local/share/fonts
 cd ~/.local/share/fonts
 curl -fLO https://github.com/romkatv/powerlevel10k-media/raw/master/MesloLGS%20NF%20Regular.ttf 2>/dev/null || ERRORS+=("Font: MesloLGS Regular")
@@ -142,13 +142,13 @@ cd ~
 # ---------------------------------------------------------------------------
 # 8. Git Setup
 # ---------------------------------------------------------------------------
-echo "[8/18] Installing Git..."
+echo "[8/15] Installing Git..."
 run_step "Git" sudo dnf install -y git git-credential-libsecret
 
 # ---------------------------------------------------------------------------
 # 9. Node.js via nvm
 # ---------------------------------------------------------------------------
-echo "[9/18] Installing Node.js via nvm..."
+echo "[9/15] Installing Node.js via nvm..."
 if [ ! -d "$HOME/.nvm" ]; then
   run_step_eval "nvm" 'curl -o- https://raw.githubusercontent.com/nvm-sh/nvm/v0.40.1/install.sh | bash'
 fi
@@ -164,14 +164,14 @@ fi
 # ---------------------------------------------------------------------------
 # 10. Python + pip + uv
 # ---------------------------------------------------------------------------
-echo "[10/18] Installing Python + uv..."
+echo "[10/15] Installing Python + uv..."
 run_step "Python" sudo dnf install -y python3 python3-pip python3-devel
 run_step_eval "uv" 'curl -LsSf https://astral.sh/uv/install.sh | sh'
 
 # ---------------------------------------------------------------------------
 # 11. Docker + Docker Compose
 # ---------------------------------------------------------------------------
-echo "[11/18] Installing Docker..."
+echo "[11/15] Installing Docker..."
 sudo dnf -y install dnf-plugins-core 2>/dev/null || true
 run_step_eval "Docker repo" "${DNF_ADD_REPO}https://download.docker.com/linux/fedora/docker-ce.repo"
 run_step "Docker" sudo dnf install -y --allowerasing docker-ce docker-ce-cli containerd.io docker-buildx-plugin docker-compose-plugin
@@ -182,47 +182,28 @@ sudo usermod -aG docker "$USER" 2>/dev/null || true
 # ---------------------------------------------------------------------------
 # 12. Rust + Cargo
 # ---------------------------------------------------------------------------
-echo "[12/18] Installing Rust..."
+echo "[12/15] Installing Rust..."
 if ! command -v cargo &>/dev/null; then
   run_step_eval "Rust" "curl --proto '=https' --tlsv1.2 -sSf https://sh.rustup.rs | sh -s -- -y"
   [ -f "$HOME/.cargo/env" ] && source "$HOME/.cargo/env"
 fi
 
 # ---------------------------------------------------------------------------
-# 13. Kiro IDE
+# 13. Telegram
 # ---------------------------------------------------------------------------
-echo "[13/18] Installing Kiro IDE..."
-run_step_eval "Kiro IDE" 'curl -fsSL https://raw.githubusercontent.com/abhilashiig/kiro-ide-linux-installation/main/clone-and-install-kiro.sh | bash'
-
-# ---------------------------------------------------------------------------
-# 14. Telegram + WhatsApp
-# ---------------------------------------------------------------------------
-echo "[14/18] Installing Telegram + WhatsApp..."
+echo "[13/15] Installing Telegram..."
 run_step "Telegram" flatpak install -y flathub org.telegram.desktop
-run_step "WhatsApp (ZapZap)" flatpak install -y flathub com.rtosta.zapzap
 
 # ---------------------------------------------------------------------------
-# 15. Beekeeper Studio (Database GUI)
+# 14. Spotify
 # ---------------------------------------------------------------------------
-echo "[15/18] Installing Beekeeper Studio..."
-run_step "Beekeeper Studio" flatpak install -y flathub io.beekeeperstudio.Studio
-
-# ---------------------------------------------------------------------------
-# 16. Bruno (API Client)
-# ---------------------------------------------------------------------------
-echo "[16/18] Installing Bruno..."
-run_step "Bruno" flatpak install -y flathub com.usebruno.Bruno
-
-# ---------------------------------------------------------------------------
-# 17. Spotify
-# ---------------------------------------------------------------------------
-echo "[17/18] Installing Spotify..."
+echo "[14/15] Installing Spotify..."
 run_step "Spotify" flatpak install -y flathub com.spotify.Client
 
 # ---------------------------------------------------------------------------
-# 18. GNOME Tweaks + Utilities
+# 15. GNOME Tweaks + Utilities
 # ---------------------------------------------------------------------------
-echo "[18/18] Installing utilities..."
+echo "[15/15] Installing utilities..."
 run_step "Utilities" sudo dnf install -y \
   gnome-tweaks \
   flameshot \
@@ -281,6 +262,7 @@ echo "  3. Set Ghostty font to 'MesloLGS NF'"
 echo "  4. git config --global user.name \"Your Name\""
 echo "  5. git config --global user.email \"your@email.com\""
 echo "  6. Add SSH key to GitHub: https://github.com/settings/keys"
+echo "  7. Download & install Kiro IDE manually: https://kiro.dev/downloads"
 echo ""
 read -p "  Reboot now? (y/n) " r
 [ "$r" = "y" ] && sudo reboot
