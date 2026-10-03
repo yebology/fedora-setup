@@ -19,6 +19,7 @@ bash <(curl -fsSL https://raw.githubusercontent.com/yebology/fedora-setup/main/s
 | Terminal | Ghostty + Zsh + Oh My Zsh + Powerlevel10k |
 | Fonts | MesloLGS Nerd Font + JetBrains Mono |
 | JavaScript | Node.js (LTS via nvm) |
+| AI Coding | Claude Code CLI + 9 plugins (github, frontend-design, superpowers, code-review, context7, skill-creator, code-simplifier, claude-md-management, feature-dev) |
 | Python | Python 3 + pip + uv |
 | Rust | Rust + Cargo (via rustup) |
 | Containers | Docker + Docker Compose |

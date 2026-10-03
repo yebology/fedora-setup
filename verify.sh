@@ -74,6 +74,36 @@ check_cmd "Docker" "docker"
 check_cmd "Rust (cargo)" "cargo"
 check_cmd "Ghostty" "ghostty"
 
+# Claude Code CLI + plugins
+if command -v claude &>/dev/null; then
+  echo "  ✅ Claude Code CLI"
+  ((PASS++))
+  CLAUDE_PLUGINS=(
+    github
+    frontend-design
+    superpowers
+    code-review
+    context7
+    skill-creator
+    code-simplifier
+    claude-md-management
+    feature-dev
+  )
+  INSTALLED_PLUGINS="$(claude plugin list 2>/dev/null)"
+  for plugin in "${CLAUDE_PLUGINS[@]}"; do
+    if echo "$INSTALLED_PLUGINS" | grep -qi "$plugin"; then
+      echo "  ✅ Claude plugin: $plugin"
+      ((PASS++))
+    else
+      echo "  ❌ Claude plugin: $plugin — NOT FOUND"
+      ((FAIL++))
+    fi
+  done
+else
+  echo "  ❌ Claude Code CLI — NOT FOUND"
+  ((FAIL++))
+fi
+
 # uv
 if [ -f "$HOME/.local/bin/uv" ] || command -v uv &>/dev/null; then
   echo "  ✅ uv (Python package manager)"
